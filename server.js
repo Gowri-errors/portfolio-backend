@@ -96,9 +96,7 @@ app.post("/api/contact", async (req, res) => {
   const { name, email, phone, message } = req.body;
 
   try {
-    // ============================
-    // 1️⃣ EMAIL TO YOU
-    // ============================
+    // EMAIL TO YOU
     await resend.emails.send({
       from: "Portfolio <onboarding@resend.dev>",
       to: ["gowrishankar.devpro@gmail.com"],
@@ -114,19 +112,17 @@ app.post("/api/contact", async (req, res) => {
       `
     });
 
-    // ============================
-    // 2️⃣ AUTO REPLY TO USER
-    // ============================
+    // AUTO REPLY TO USER
     await resend.emails.send({
       from: "Gowrishankar <onboarding@resend.dev>",
       to: [email],
-      subject: `Thanks for contacting me, ${name}! 😊 -I’ll get back to you soon!`,
+      subject: `Thanks for contacting me, ${name}! 😊`,
       html: `
         <h3>Hello ${name}, 👋</h3>
 
-        <p>Thank you for reaching out through my portfolio website.</p>
+        <p>Thank you for contacting me through my portfolio website.</p>
 
-        <p>I’ve received your message and will get back to you as soon as possible.</p>
+        <p>I’ve received your message and will respond shortly.</p>
 
         <br>
 
@@ -152,3 +148,11 @@ app.post("/api/contact", async (req, res) => {
   }
 });
 
+// ============================
+// RENDER PORT (VERY IMPORTANT)
+// ============================
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log("✅ Backend running on port", PORT);
+});
