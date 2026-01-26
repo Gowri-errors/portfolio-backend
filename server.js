@@ -15,9 +15,16 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// ===========================
+// ============================
+// ROOT CHECK
+// ============================
+app.get("/", (req, res) => {
+  res.send("✅ Backend API running successfully");
+});
+
+// ============================
 // GET LIKE COUNT
-// ===========================
+// ============================
 app.get("/api/count/:postId", async (req, res) => {
   const { postId } = req.params;
 
@@ -29,9 +36,9 @@ app.get("/api/count/:postId", async (req, res) => {
   res.json({ count: Number(result.rows[0].count) });
 });
 
-// ===========================
-// CHECK IF DEVICE LIKED
-// ===========================
+// ============================
+// CHECK DEVICE LIKE
+// ============================
 app.get("/api/liked/:postId/:deviceId", async (req, res) => {
   const { postId, deviceId } = req.params;
 
@@ -43,9 +50,9 @@ app.get("/api/liked/:postId/:deviceId", async (req, res) => {
   res.json({ liked: result.rowCount > 0 });
 });
 
-// ===========================
+// ============================
 // LIKE
-// ===========================
+// ============================
 app.post("/api/like", async (req, res) => {
   const { post_id, device_id } = req.body;
 
@@ -54,15 +61,16 @@ app.post("/api/like", async (req, res) => {
       "INSERT INTO likes (post_id, device_id) VALUES ($1,$2)",
       [post_id, device_id]
     );
-    res.json({ liked: true });
-  } catch {
-    res.json({ liked: true }); // already liked
+  } catch (err) {
+    // already liked → ignore
   }
+
+  res.json({ liked: true });
 });
 
-// ===========================
+// ============================
 // UNLIKE
-// ===========================
+// ============================
 app.post("/api/unlike", async (req, res) => {
   const { post_id, device_id } = req.body;
 
