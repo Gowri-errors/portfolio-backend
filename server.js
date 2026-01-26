@@ -90,19 +90,22 @@ app.post("/api/unlike", async (req, res) => {
 });
 
 // ============================
-// CONTACT EMAIL (RESEND)
+// CONTACT EMAIL + AUTO REPLY
 // ============================
 app.post("/api/contact", async (req, res) => {
   const { name, email, phone, message } = req.body;
 
   try {
+    // ============================
+    // 1️⃣ EMAIL TO YOU
+    // ============================
     await resend.emails.send({
       from: "Portfolio <onboarding@resend.dev>",
-      to: ["gowrishankar1142003@gmail.com"],
+      to: ["gowrishankar.devpro@gmail.com"],
       reply_to: email,
       subject: `📩 New Message from ${name}`,
       html: `
-        <h2>Portfolio Contact</h2>
+        <h2>New Portfolio Contact</h2>
         <p><b>Name:</b> ${name}</p>
         <p><b>Email:</b> ${email}</p>
         <p><b>Phone:</b> ${phone}</p>
@@ -111,14 +114,41 @@ app.post("/api/contact", async (req, res) => {
       `
     });
 
+    // ============================
+    // 2️⃣ AUTO REPLY TO USER
+    // ============================
+    await resend.emails.send({
+      from: "Gowrishankar <onboarding@resend.dev>",
+      to: [email],
+      subject: `Thanks for contacting me, ${name}! 😊 -I’ll get back to you soon!`,
+      html: `
+        <h3>Hello ${name}, 👋</h3>
+
+        <p>Thank you for reaching out through my portfolio website.</p>
+
+        <p>I’ve received your message and will get back to you as soon as possible.</p>
+
+        <br>
+
+        <p><b>Your message:</b></p>
+        <blockquote>${message}</blockquote>
+
+        <br>
+
+        <p>Best regards,</p>
+        <p><b>Gowrishankar</b></p>
+        <p>Java Full Stack Developer | Tech Trainer</p>
+
+        <hr>
+        <small>This is an automated reply. Please do not reply to this email.</small>
+      `
+    });
+
     res.json({ success: true });
 
-  } catch (err) {
-    console.error("EMAIL ERROR:", err);
+  } catch (error) {
+    console.error("EMAIL ERROR:", error);
     res.status(500).json({ success: false });
   }
 });
 
-app.listen(5000, () => {
-  console.log("✅ Backend running");
-});
