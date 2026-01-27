@@ -165,7 +165,7 @@ app.post("/api/contact", async (req, res) => {
     // AUTO REPLY
     await resend.emails.send({
       from: "Gowrishankar <onboarding@resend.dev>",
-      to: [email],
+      to: ["gowrishankar.devpro@gmail.com"],
       subject: `Thanks for contacting me, ${name}! 😊`,
       html: `
         <h3>Hello ${name}, 👋</h3>
