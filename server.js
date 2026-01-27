@@ -35,28 +35,40 @@ app.get("/", (req, res) => {
 // LIKE COUNT
 // ============================
 app.get("/api/count/:postId", async (req, res) => {
-  const { postId } = req.params;
+  try {
+    const { postId } = req.params;
 
-  const result = await pool.query(
-    "SELECT COUNT(*) FROM likes WHERE post_id=$1",
-    [postId]
-  );
+    const result = await pool.query(
+      "SELECT COUNT(*) FROM likes WHERE post_id=$1",
+      [postId]
+    );
 
-  res.json({ count: Number(result.rows[0].count) });
+    res.json({ count: Number(result.rows[0].count) });
+
+  } catch (err) {
+    console.error("COUNT ERROR:", err);
+    res.status(500).json({ count: 0 });
+  }
 });
 
 // ============================
 // CHECK DEVICE LIKE
 // ============================
 app.get("/api/liked/:postId/:deviceId", async (req, res) => {
-  const { postId, deviceId } = req.params;
+  try {
+    const { postId, deviceId } = req.params;
 
-  const result = await pool.query(
-    "SELECT 1 FROM likes WHERE post_id=$1 AND device_id=$2",
-    [postId, deviceId]
-  );
+    const result = await pool.query(
+      "SELECT 1 FROM likes WHERE post_id=$1 AND device_id=$2",
+      [postId, deviceId]
+    );
 
-  res.json({ liked: result.rowCount > 0 });
+    res.json({ liked: result.rowCount > 0 });
+
+  } catch (err) {
+    console.error("LIKED ERROR:", err);
+    res.json({ liked: false });
+  }
 });
 
 // ============================
@@ -81,22 +93,34 @@ app.post("/api/like", async (req, res) => {
 app.post("/api/unlike", async (req, res) => {
   const { post_id, device_id } = req.body;
 
-  await pool.query(
-    "DELETE FROM likes WHERE post_id=$1 AND device_id=$2",
-    [post_id, device_id]
-  );
+  try {
+    await pool.query(
+      "DELETE FROM likes WHERE post_id=$1 AND device_id=$2",
+      [post_id, device_id]
+    );
+  } catch {}
 
   res.json({ liked: false });
 });
 
 // ============================
-// CONTACT EMAIL + AUTO REPLY
+// CONTACT FORM (DB + EMAIL)
 // ============================
 app.post("/api/contact", async (req, res) => {
   const { name, email, phone, message } = req.body;
 
   try {
-    // EMAIL TO YOU
+    // ============================
+    // SAVE TO DATABASE
+    // ============================
+    await pool.query(
+      "INSERT INTO contact_messages (name, email, phone, message) VALUES ($1,$2,$3,$4)",
+      [name, email, phone, message]
+    );
+
+    // ============================
+    // EMAIL TO DEVELOPER
+    // ============================
     await resend.emails.send({
       from: "Portfolio <onboarding@resend.dev>",
       to: ["gowrishankar.devpro@gmail.com"],
@@ -112,44 +136,35 @@ app.post("/api/contact", async (req, res) => {
       `
     });
 
-    // AUTO REPLY TO USER
+    // ============================
+    // AUTO REPLY TO VISITOR
+    // ============================
     await resend.emails.send({
       from: "Gowrishankar <onboarding@resend.dev>",
       to: [email],
       subject: `Thanks for contacting me, ${name}! 😊`,
       html: `
         <h3>Hello ${name}, 👋</h3>
-
-        <p>Thank you for contacting me through my portfolio website.</p>
-
-        <p>I’ve received your message and will respond shortly.</p>
-
+        <p>Your message has been received successfully.</p>
+        <p>I’ll get back to you shortly.</p>
         <br>
-
         <p><b>Your message:</b></p>
         <blockquote>${message}</blockquote>
-
         <br>
-
-        <p>Best regards,</p>
-        <p><b>Gowrishankar</b></p>
-        <p>Java Full Stack Developer | Tech Trainer</p>
-
-        <hr>
-        <small>This is an automated reply. Please do not reply to this email.</small>
+        <p>Regards,<br><b>Gowrishankar</b></p>
       `
     });
 
     res.json({ success: true });
 
-  } catch (error) {
-    console.error("EMAIL ERROR:", error);
+  } catch (err) {
+    console.error("CONTACT ERROR:", err);
     res.status(500).json({ success: false });
   }
 });
 
 // ============================
-// RENDER PORT (VERY IMPORTANT)
+// RENDER PORT
 // ============================
 const PORT = process.env.PORT || 5000;
 
