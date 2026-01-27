@@ -2,7 +2,7 @@ import express from "express";
 import pkg from "pg";
 import cors from "cors";
 import dotenv from "dotenv";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 dotenv.config();
 const { Pool } = pkg;
@@ -18,11 +18,6 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
-
-// ============================
-// RESEND SETUP
-// ============================
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ============================
 // ROOT CHECK
@@ -90,20 +85,27 @@ app.post("/api/unlike", async (req, res) => {
 });
 
 // ============================
-// CONTACT EMAIL + AUTO REPLY
+// CONTACT EMAIL
 // ============================
 app.post("/api/contact", async (req, res) => {
   const { name, email, phone, message } = req.body;
 
   try {
-    // EMAIL TO YOU
-    await resend.emails.send({
-      from: "Portfolio <onboarding@resend.dev>",
-      to: ["gowrishankar.devpro@gmail.com"],
-      reply_to: email,
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+
+    await transporter.sendMail({
+      from: `"Portfolio Contact" <${process.env.EMAIL_USER}>`,
+      to: process.env.EMAIL_USER,
+      replyTo: email,
       subject: `📩 New Message from ${name}`,
       html: `
-        <h2>New Portfolio Contact</h2>
+        <h2>Portfolio Contact</h2>
         <p><b>Name:</b> ${name}</p>
         <p><b>Email:</b> ${email}</p>
         <p><b>Phone:</b> ${phone}</p>
@@ -112,47 +114,14 @@ app.post("/api/contact", async (req, res) => {
       `
     });
 
-    // AUTO REPLY TO USER
-    await resend.emails.send({
-      from: "Gowrishankar <onboarding@resend.dev>",
-      to: [email],
-      subject: `Thanks for contacting me, ${name}! 😊`,
-      html: `
-        <h3>Hello ${name}, 👋</h3>
-
-        <p>Thank you for contacting me through my portfolio website.</p>
-
-        <p>I’ve received your message and will respond shortly.</p>
-
-        <br>
-
-        <p><b>Your message:</b></p>
-        <blockquote>${message}</blockquote>
-
-        <br>
-
-        <p>Best regards,</p>
-        <p><b>Gowrishankar</b></p>
-        <p>Java Full Stack Developer | Tech Trainer</p>
-
-        <hr>
-        <small>This is an automated reply. Please do not reply to this email.</small>
-      `
-    });
-
     res.json({ success: true });
 
-  } catch (error) {
-    console.error("EMAIL ERROR:", error);
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false });
   }
 });
 
-// ============================
-// RENDER PORT (VERY IMPORTANT)
-// ============================
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log("✅ Backend running on port", PORT);
+app.listen(5000, () => {
+  console.log("✅ Backend running");
 });
