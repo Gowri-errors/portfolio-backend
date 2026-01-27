@@ -2,7 +2,7 @@ import express from "express";
 import pkg from "pg";
 import cors from "cors";
 import dotenv from "dotenv";
-import { Resend } from "resend";
+ 
 import nodemailer from "nodemailer";
 dotenv.config();
 const { Pool } = pkg;
@@ -22,11 +22,7 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000
 });
 
-// ============================
-// RESEND
-// ============================
-const resend = new Resend(process.env.RESEND_API_KEY);
-
+ 
 // ============================
 // ROOT
 // ============================
