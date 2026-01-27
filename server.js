@@ -2,8 +2,8 @@ import express from "express";
 import pkg from "pg";
 import cors from "cors";
 import dotenv from "dotenv";
- 
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
+
 dotenv.config();
 const { Pool } = pkg;
 
@@ -22,7 +22,8 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000
 });
 
- 
+ const resend = new Resend(process.env.RESEND_API_KEY);
+
 // ============================
 // ROOT
 // ============================
@@ -135,19 +136,11 @@ app.post("/api/contact", async (req, res) => {
   const { name, email, phone, message } = req.body;
 
   try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
-
-    await transporter.sendMail({
-      from: `"Portfolio Contact" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
-      replyTo: email,
-      subject: `📩 New Portfolio Message from ${name}`,
+    await resend.emails.send({
+      from: "Portfolio <onboarding@resend.dev>",
+      to: ["gowrishankar.devpro@gmail.com"],
+      reply_to: email,
+      subject: `📩 Portfolio Message from ${name}`,
       html: `
         <h2>New Contact Message</h2>
         <p><b>Name:</b> ${name}</p>
@@ -160,11 +153,12 @@ app.post("/api/contact", async (req, res) => {
 
     res.json({ success: true });
 
-  } catch (err) {
-    console.error("EMAIL ERROR:", err);
+  } catch (error) {
+    console.error("RESEND ERROR:", error);
     res.status(500).json({ success: false });
   }
 });
+
 
 
 // ============================
