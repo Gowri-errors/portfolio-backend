@@ -34,9 +34,9 @@ app.get("/", (req, res) => {
   res.send("✅ Backend API running successfully");
 });
 
-// =================================================
-// 🔥 GET ALL COUNTS (USED BY FRONTEND ON REFRESH)
-// =================================================
+// ============================
+// GET ALL LIKE COUNTS
+// ============================
 app.get("/api/counts", async (req, res) => {
   try {
     const result = await pool.query(`
@@ -49,24 +49,6 @@ app.get("/api/counts", async (req, res) => {
   } catch (err) {
     console.error("COUNTS ERROR:", err);
     res.json([]);
-  }
-});
-
-// =================================================
-// 🔥 SINGLE COUNT (BACKUP ROUTE)
-// =================================================
-app.get("/api/count/:postId", async (req, res) => {
-  try {
-    const { postId } = req.params;
-
-    const result = await pool.query(
-      "SELECT COUNT(*) FROM likes WHERE post_id=$1",
-      [postId]
-    );
-
-    res.json({ count: Number(result.rows[0].count) });
-  } catch (err) {
-    res.json({ count: 0 });
   }
 });
 
@@ -131,7 +113,7 @@ app.post("/api/unlike", async (req, res) => {
 });
 
 // ============================
-// CONTACT FORM
+// CONTACT FORM (CORRECT FLOW)
 // ============================
 app.post("/api/contact", async (req, res) => {
   const { name, email, phone, message } = req.body;
@@ -146,36 +128,26 @@ app.post("/api/contact", async (req, res) => {
       [name, email, phone, message]
     );
 
-    // EMAIL TO YOU
+    // SEND EMAIL TO DEVELOPER ONLY
     await resend.emails.send({
-      from: "Portfolio <onboarding@resend.dev>",
+      from: "Portfolio Contact <onboarding@resend.dev>",
       to: ["gowrishankar.devpro@gmail.com"],
-      reply_to: email,
-      subject: `📩 New Contact from ${name}`,
+      reply_to: email, // 🔥 visitor email
+      subject: `📩 New Portfolio Message from ${name}`,
       html: `
-        <h2>New Portfolio Message</h2>
+        <h2>New Contact Message</h2>
+
         <p><b>Name:</b> ${name}</p>
         <p><b>Email:</b> ${email}</p>
         <p><b>Phone:</b> ${phone}</p>
+
+        <hr>
+
         <p><b>Message:</b></p>
         <p>${message}</p>
-      `
-    });
 
-    // AUTO REPLY
-    await resend.emails.send({
-      from: "Gowrishankar <onboarding@resend.dev>",
-      to: ["gowrishankar.devpro@gmail.com"],
-      subject: `Thanks for contacting me, ${name}! 😊`,
-      html: `
-        <h3>Hello ${name}, 👋</h3>
-        <p>Your message was received successfully.</p>
-        <p>I will get back to you soon.</p>
         <br>
-        <p><b>Your message:</b></p>
-        <blockquote>${message}</blockquote>
-        <br>
-        <p>Regards,<br><b>Gowrishankar</b></p>
+        <small>Reply to this email to respond to the visitor.</small>
       `
     });
 
