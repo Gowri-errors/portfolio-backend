@@ -2,7 +2,7 @@ import express from "express";
 import pkg from "pg";
 import cors from "cors";
 import dotenv from "dotenv";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 dotenv.config();
 const { Pool } = pkg;
@@ -18,6 +18,11 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
+
+// ============================
+// RESEND SETUP
+// ============================
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ============================
 // ROOT CHECK
@@ -85,24 +90,16 @@ app.post("/api/unlike", async (req, res) => {
 });
 
 // ============================
-// CONTACT EMAIL
+// CONTACT EMAIL (RESEND)
 // ============================
 app.post("/api/contact", async (req, res) => {
   const { name, email, phone, message } = req.body;
 
   try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
-
-    await transporter.sendMail({
-      from: `"Portfolio Contact" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
-      replyTo: email,
+    await resend.emails.send({
+      from: "Portfolio <onboarding@resend.dev>",
+      to: ["gowrishankar1142003@gmail.com"],
+      reply_to: email,
       subject: `📩 New Message from ${name}`,
       html: `
         <h2>Portfolio Contact</h2>
@@ -117,7 +114,7 @@ app.post("/api/contact", async (req, res) => {
     res.json({ success: true });
 
   } catch (err) {
-    console.error(err);
+    console.error("EMAIL ERROR:", err);
     res.status(500).json({ success: false });
   }
 });
