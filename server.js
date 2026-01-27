@@ -34,9 +34,9 @@ app.get("/", (req, res) => {
   res.send("✅ Backend API running successfully");
 });
 
-// ============================
-// GET ALL COUNTS (FAST)
-// ============================
+// =================================================
+// 🔥 GET ALL COUNTS (USED BY FRONTEND ON REFRESH)
+// =================================================
 app.get("/api/counts", async (req, res) => {
   try {
     const result = await pool.query(`
@@ -49,6 +49,24 @@ app.get("/api/counts", async (req, res) => {
   } catch (err) {
     console.error("COUNTS ERROR:", err);
     res.json([]);
+  }
+});
+
+// =================================================
+// 🔥 SINGLE COUNT (BACKUP ROUTE)
+// =================================================
+app.get("/api/count/:postId", async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    const result = await pool.query(
+      "SELECT COUNT(*) FROM likes WHERE post_id=$1",
+      [postId]
+    );
+
+    res.json({ count: Number(result.rows[0].count) });
+  } catch (err) {
+    res.json({ count: 0 });
   }
 });
 
@@ -78,9 +96,11 @@ app.post("/api/like", async (req, res) => {
 
   try {
     await pool.query(
-      `INSERT INTO likes (post_id, device_id)
-       VALUES ($1, $2)
-       ON CONFLICT DO NOTHING`,
+      `
+      INSERT INTO likes (post_id, device_id)
+      VALUES ($1,$2)
+      ON CONFLICT DO NOTHING
+      `,
       [post_id, device_id]
     );
 
@@ -117,21 +137,23 @@ app.post("/api/contact", async (req, res) => {
   const { name, email, phone, message } = req.body;
 
   try {
-    // SAVE TO DB
+    // SAVE MESSAGE
     await pool.query(
-      `INSERT INTO contact_messages (name,email,phone,message)
-       VALUES ($1,$2,$3,$4)`,
+      `
+      INSERT INTO contact_messages (name,email,phone,message)
+      VALUES ($1,$2,$3,$4)
+      `,
       [name, email, phone, message]
     );
 
-    // EMAIL TO DEVELOPER
+    // EMAIL TO YOU
     await resend.emails.send({
       from: "Portfolio <onboarding@resend.dev>",
       to: ["gowrishankar.devpro@gmail.com"],
       reply_to: email,
       subject: `📩 New Contact from ${name}`,
       html: `
-        <h2>Portfolio Contact</h2>
+        <h2>New Portfolio Message</h2>
         <p><b>Name:</b> ${name}</p>
         <p><b>Email:</b> ${email}</p>
         <p><b>Phone:</b> ${phone}</p>
@@ -147,8 +169,8 @@ app.post("/api/contact", async (req, res) => {
       subject: `Thanks for contacting me, ${name}! 😊`,
       html: `
         <h3>Hello ${name}, 👋</h3>
-        <p>Thank you for reaching out.</p>
-        <p>I’ve received your message and will contact you shortly.</p>
+        <p>Your message was received successfully.</p>
+        <p>I will get back to you soon.</p>
         <br>
         <p><b>Your message:</b></p>
         <blockquote>${message}</blockquote>
@@ -166,7 +188,7 @@ app.post("/api/contact", async (req, res) => {
 });
 
 // ============================
-// PORT (RENDER)
+// PORT
 // ============================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
