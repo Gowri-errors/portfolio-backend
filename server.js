@@ -79,13 +79,20 @@ app.post("/api/like", async (req, res) => {
 
   try {
     await pool.query(
-      "INSERT INTO likes (post_id, device_id) VALUES ($1,$2)",
+      `INSERT INTO likes (post_id, device_id)
+       VALUES ($1, $2)
+       ON CONFLICT (post_id, device_id) DO NOTHING`,
       [post_id, device_id]
     );
-  } catch {}
 
-  res.json({ liked: true });
+    res.json({ liked: true });
+
+  } catch (err) {
+    console.error("LIKE ERROR:", err);
+    res.status(500).json({ liked: false });
+  }
 });
+
 
 // ============================
 // UNLIKE
@@ -93,15 +100,14 @@ app.post("/api/like", async (req, res) => {
 app.post("/api/unlike", async (req, res) => {
   const { post_id, device_id } = req.body;
 
-  try {
-    await pool.query(
-      "DELETE FROM likes WHERE post_id=$1 AND device_id=$2",
-      [post_id, device_id]
-    );
-  } catch {}
+  await pool.query(
+    "DELETE FROM likes WHERE post_id=$1 AND device_id=$2",
+    [post_id, device_id]
+  );
 
   res.json({ liked: false });
 });
+
 
 // ============================
 // CONTACT FORM (DB + EMAIL)
