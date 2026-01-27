@@ -136,18 +136,62 @@ app.post("/api/contact", async (req, res) => {
   const { name, email, phone, message } = req.body;
 
   try {
+    // ==============================
+    // 1️⃣ EMAIL TO DEVELOPER
+    // ==============================
     await resend.emails.send({
       from: "Portfolio <onboarding@resend.dev>",
       to: ["gowrishankar.devpro@gmail.com"],
       reply_to: email,
       subject: `📩 Portfolio Message from ${name}`,
       html: `
-        <h2>New Contact Message</h2>
+        <h2>New Portfolio Contact</h2>
         <p><b>Name:</b> ${name}</p>
         <p><b>Email:</b> ${email}</p>
         <p><b>Phone:</b> ${phone}</p>
         <p><b>Message:</b></p>
         <p>${message}</p>
+      `
+    });
+
+    // ==============================
+    // 2️⃣ AUTO REPLY TO VISITOR
+    // ==============================
+    await resend.emails.send({
+      from: "Gowrishankar <onboarding@resend.dev>",
+      to: [email],
+      subject: `Thanks for contacting me, ${name}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h3>Hello ${name}, 👋</h3>
+
+          <p>
+            Thank you for reaching out through my portfolio website.
+          </p>
+
+          <p>
+            I’ve successfully received your message and will get back to you shortly.
+          </p>
+
+          <hr>
+
+          <p><b>Your message:</b></p>
+          <blockquote style="background:#f7f7f7;padding:10px;border-left:4px solid #4f46e5;">
+            ${message}
+          </blockquote>
+
+          <br>
+
+          <p>
+            Best regards,<br>
+            <b>Gowrishankar</b><br>
+            Full Stack Developer | Tech Trainer
+          </p>
+
+          <p style="font-size:12px;color:#777;">
+            This is an automated reply. Please do not reply to this email.
+          </p>
+        </div>
       `
     });
 
