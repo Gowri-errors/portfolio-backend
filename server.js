@@ -16,38 +16,39 @@ app.use(express.json());
 // ============================
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
+  max: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000
 });
 
 // ============================
-// RESEND SETUP
+// RESEND
 // ============================
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ============================
-// ROOT CHECK
+// ROOT
 // ============================
 app.get("/", (req, res) => {
   res.send("✅ Backend API running successfully");
 });
 
 // ============================
-// LIKE COUNT
+// GET ALL COUNTS (FAST)
 // ============================
-app.get("/api/count/:postId", async (req, res) => {
+app.get("/api/counts", async (req, res) => {
   try {
-    const { postId } = req.params;
+    const result = await pool.query(`
+      SELECT post_id, COUNT(*)::int AS count
+      FROM likes
+      GROUP BY post_id
+    `);
 
-    const result = await pool.query(
-      "SELECT COUNT(*) FROM likes WHERE post_id=$1",
-      [postId]
-    );
-
-    res.json({ count: Number(result.rows[0].count) });
-
+    res.json(result.rows);
   } catch (err) {
-    console.error("COUNT ERROR:", err);
-    res.status(500).json({ count: 0 });
+    console.error("COUNTS ERROR:", err);
+    res.json([]);
   }
 });
 
@@ -64,9 +65,7 @@ app.get("/api/liked/:postId/:deviceId", async (req, res) => {
     );
 
     res.json({ liked: result.rowCount > 0 });
-
-  } catch (err) {
-    console.error("LIKED ERROR:", err);
+  } catch {
     res.json({ liked: false });
   }
 });
@@ -81,18 +80,16 @@ app.post("/api/like", async (req, res) => {
     await pool.query(
       `INSERT INTO likes (post_id, device_id)
        VALUES ($1, $2)
-       ON CONFLICT (post_id, device_id) DO NOTHING`,
+       ON CONFLICT DO NOTHING`,
       [post_id, device_id]
     );
 
     res.json({ liked: true });
-
   } catch (err) {
     console.error("LIKE ERROR:", err);
     res.status(500).json({ liked: false });
   }
 });
-
 
 // ============================
 // UNLIKE
@@ -100,40 +97,41 @@ app.post("/api/like", async (req, res) => {
 app.post("/api/unlike", async (req, res) => {
   const { post_id, device_id } = req.body;
 
-  await pool.query(
-    "DELETE FROM likes WHERE post_id=$1 AND device_id=$2",
-    [post_id, device_id]
-  );
+  try {
+    await pool.query(
+      "DELETE FROM likes WHERE post_id=$1 AND device_id=$2",
+      [post_id, device_id]
+    );
 
-  res.json({ liked: false });
+    res.json({ liked: false });
+  } catch (err) {
+    console.error("UNLIKE ERROR:", err);
+    res.status(500).json({ liked: false });
+  }
 });
 
-
 // ============================
-// CONTACT FORM (DB + EMAIL)
+// CONTACT FORM
 // ============================
 app.post("/api/contact", async (req, res) => {
   const { name, email, phone, message } = req.body;
 
   try {
-    // ============================
-    // SAVE TO DATABASE
-    // ============================
+    // SAVE TO DB
     await pool.query(
-      "INSERT INTO contact_messages (name, email, phone, message) VALUES ($1,$2,$3,$4)",
+      `INSERT INTO contact_messages (name,email,phone,message)
+       VALUES ($1,$2,$3,$4)`,
       [name, email, phone, message]
     );
 
-    // ============================
     // EMAIL TO DEVELOPER
-    // ============================
     await resend.emails.send({
       from: "Portfolio <onboarding@resend.dev>",
       to: ["gowrishankar.devpro@gmail.com"],
       reply_to: email,
-      subject: `📩 New Message from ${name}`,
+      subject: `📩 New Contact from ${name}`,
       html: `
-        <h2>New Portfolio Contact</h2>
+        <h2>Portfolio Contact</h2>
         <p><b>Name:</b> ${name}</p>
         <p><b>Email:</b> ${email}</p>
         <p><b>Phone:</b> ${phone}</p>
@@ -142,17 +140,15 @@ app.post("/api/contact", async (req, res) => {
       `
     });
 
-    // ============================
-    // AUTO REPLY TO VISITOR
-    // ============================
+    // AUTO REPLY
     await resend.emails.send({
       from: "Gowrishankar <onboarding@resend.dev>",
       to: [email],
       subject: `Thanks for contacting me, ${name}! 😊`,
       html: `
         <h3>Hello ${name}, 👋</h3>
-        <p>Your message has been received successfully.</p>
-        <p>I’ll get back to you shortly.</p>
+        <p>Thank you for reaching out.</p>
+        <p>I’ve received your message and will contact you shortly.</p>
         <br>
         <p><b>Your message:</b></p>
         <blockquote>${message}</blockquote>
@@ -170,10 +166,9 @@ app.post("/api/contact", async (req, res) => {
 });
 
 // ============================
-// RENDER PORT
+// PORT (RENDER)
 // ============================
 const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, () => {
   console.log("✅ Backend running on port", PORT);
 });
