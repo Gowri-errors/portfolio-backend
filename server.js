@@ -3,7 +3,7 @@ import pkg from "pg";
 import cors from "cors";
 import dotenv from "dotenv";
 import { Resend } from "resend";
-
+import nodemailer from "nodemailer";
 dotenv.config();
 const { Pool } = pkg;
 
@@ -130,30 +130,30 @@ app.post("/api/unlike", async (req, res) => {
   }
 });
 
+
+
 // ============================
-// CONTACT FORM
+// CONTACT FORM EMAIL (FREE)
 // ============================
 app.post("/api/contact", async (req, res) => {
   const { name, email, phone, message } = req.body;
 
   try {
-    // SAVE MESSAGE
-    await pool.query(
-      `
-      INSERT INTO contact_messages (name,email,phone,message)
-      VALUES ($1,$2,$3,$4)
-      `,
-      [name, email, phone, message]
-    );
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
 
-    // EMAIL TO YOU
-    await resend.emails.send({
-      from: "Portfolio <onboarding@resend.dev>",
-      to: ["gowrishankar.devpro@gmail.com"],
-      reply_to: email,
-      subject: `📩 New Contact from ${name}`,
+    await transporter.sendMail({
+      from: `"Portfolio Contact" <${process.env.EMAIL_USER}>`,
+      to: process.env.EMAIL_USER,
+      replyTo: email,
+      subject: `📩 New Portfolio Message from ${name}`,
       html: `
-        <h2>New Portfolio Message</h2>
+        <h2>New Contact Message</h2>
         <p><b>Name:</b> ${name}</p>
         <p><b>Email:</b> ${email}</p>
         <p><b>Phone:</b> ${phone}</p>
@@ -162,30 +162,14 @@ app.post("/api/contact", async (req, res) => {
       `
     });
 
-    // AUTO REPLY
-    await resend.emails.send({
-      from: "Gowrishankar <onboarding@resend.dev>",
-      to: [email],
-      subject: `Thanks for contacting me, ${name}! 😊`,
-      html: `
-        <h3>Hello ${name}, 👋</h3>
-        <p>Your message was received successfully.</p>
-        <p>I will get back to you soon.</p>
-        <br>
-        <p><b>Your message:</b></p>
-        <blockquote>${message}</blockquote>
-        <br>
-        <p>Regards,<br><b>Gowrishankar</b></p>
-      `
-    });
-
     res.json({ success: true });
 
   } catch (err) {
-    console.error("CONTACT ERROR:", err);
+    console.error("EMAIL ERROR:", err);
     res.status(500).json({ success: false });
   }
 });
+
 
 // ============================
 // PORT
