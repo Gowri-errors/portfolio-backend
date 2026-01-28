@@ -140,7 +140,7 @@ app.post("/api/contact", async (req, res) => {
     // 1️⃣ EMAIL TO DEVELOPER
     // ==============================
     await resend.emails.send({
-      from: "Portfolio <gowrishankar.dev>",
+      from: "Portfolio <onboarding@resend.dev>",
       to: ["gowrishankar.devpro@gmail.com"],
       reply_to: email,
       subject: `📩 Portfolio Message from ${name}`,
@@ -158,7 +158,7 @@ app.post("/api/contact", async (req, res) => {
     // 2️⃣ AUTO REPLY TO VISITOR
     // ==============================
     await resend.emails.send({
-      from: "Gowrishankar <gowrishankar.dev>",
+      from: "Gowrishankar <onboarding@resend.dev>",
       to: [email],
       subject: `Thanks for contacting me, ${name}`,
       html: `
