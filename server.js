@@ -217,7 +217,7 @@ app.post("/api/pricing-request", async (req, res) => {
 
     // Send email to developer
     await resend.emails.send({
-      from: "Portfolio <contact@gowrishankar.dev>",
+      from: "Portfolio <gowrishankar.dev>",
       to: ["gowrishankar.devpro@gmail.com"],
       subject: `💼 New Pricing Request - ${plan}`,
       html: `
