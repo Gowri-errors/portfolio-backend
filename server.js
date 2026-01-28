@@ -140,7 +140,7 @@ app.post("/api/contact", async (req, res) => {
     // 1️⃣ EMAIL TO DEVELOPER
     // ==============================
     await resend.emails.send({
-      from: "Portfolio <onboarding@resend.dev>",
+      from: "Portfolio <gowrishankar.dev>",
       to: ["gowrishankar.devpro@gmail.com"],
       reply_to: email,
       subject: `📩 Portfolio Message from ${name}`,
@@ -158,7 +158,7 @@ app.post("/api/contact", async (req, res) => {
     // 2️⃣ AUTO REPLY TO VISITOR
     // ==============================
     await resend.emails.send({
-      from: "Gowrishankar <onboarding@resend.dev>",
+      from: "Gowrishankar <gowrishankar.dev>",
       to: [email],
       subject: `Thanks for contacting me, ${name}`,
       html: `
@@ -204,6 +204,39 @@ app.post("/api/contact", async (req, res) => {
 });
 
 
+app.post("/api/pricing-request", async (req, res) => {
+  const { plan, billing, price } = req.body;
+
+  try {
+    // Save to DB
+    await pool.query(
+      `INSERT INTO pricing_requests (plan, billing, price)
+       VALUES ($1,$2,$3)`,
+      [plan, billing, price]
+    );
+
+    // Send email to developer
+    await resend.emails.send({
+      from: "Portfolio <contact@gowrishankar.dev>",
+      to: ["gowrishankar.devpro@gmail.com"],
+      subject: `💼 New Pricing Request - ${plan}`,
+      html: `
+        <h2>New Pricing Inquiry</h2>
+        <p><b>Plan:</b> ${plan}</p>
+        <p><b>Billing:</b> ${billing}</p>
+        <p><b>Price:</b> ₹${price}</p>
+        <br>
+        <p>Visitor clicked pricing card from portfolio.</p>
+      `
+    });
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error("PRICING ERROR:", err);
+    res.status(500).json({ success: false });
+  }
+});
 
 // ============================
 // PORT
