@@ -204,67 +204,6 @@ app.post("/api/contact", async (req, res) => {
 });
 
 
-// ============================
-// CONTACT FORM EMAIL
-// ============================
-app.post("/api/contact", async (req, res) => {
-  const { name, email, phone, message } = req.body;
-
-  try {
-    // EMAIL TO DEVELOPER
-    await resend.emails.send({
-      from: "Portfolio <onboarding@resend.dev>",
-      to: ["gowrishankar.devpro@gmail.com"],
-      reply_to: email,
-      subject: `📩 Portfolio Message from ${name}`,
-      html: `
-        <h2>New Portfolio Contact</h2>
-        <p><b>Name:</b> ${name}</p>
-        <p><b>Email:</b> ${email}</p>
-        <p><b>Phone:</b> ${phone}</p>
-        <p><b>Message:</b></p>
-        <p>${message}</p>
-      `
-    });
-
-    // AUTO REPLY TO VISITOR
-    await resend.emails.send({
-      from: "Gowrishankar <onboarding@resend.dev>",
-      to: [email],
-      subject: `Thanks for contacting me, ${name} 👋`,
-      html: `
-        <div style="font-family:Arial;line-height:1.6">
-          <h3>Hello ${name},</h3>
-
-          <p>Thank you for contacting me through my portfolio.</p>
-
-          <p>I have received your message and will get back to you soon.</p>
-
-          <hr>
-
-          <p><b>Your message:</b></p>
-          <blockquote style="background:#f5f5f5;padding:10px">
-            ${message}
-          </blockquote>
-
-          <br>
-          <p>
-            Regards,<br>
-            <b>Gowrishankar</b><br>
-            Full Stack Developer
-          </p>
-        </div>
-      `
-    });
-
-    res.json({ success: true });
-
-  } catch (error) {
-    console.error("RESEND ERROR:", error);
-    res.status(500).json({ success: false });
-  }
-});
-
 
 // ============================
 // PORT
