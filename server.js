@@ -205,39 +205,39 @@ app.post("/api/contact", async (req, res) => {
 });
 
 
-app.post("/api/pricing-request", async (req, res) => {
-  const { plan, billing, price } = req.body;
+// app.post("/api/pricing-request", async (req, res) => {
+//   const { plan, billing, price } = req.body;
 
-  try {
-    // Save to DB
-    await pool.query(
-      `INSERT INTO pricing_requests (plan, billing, price)
-       VALUES ($1,$2,$3)`,
-      [plan, billing, price]
-    );
+//   try {
+//     // Save to DB
+//     await pool.query(
+//       `INSERT INTO pricing_requests (plan, billing, price)
+//        VALUES ($1,$2,$3)`,
+//       [plan, billing, price]
+//     );
 
-    // Send email to developer
-    await resend.emails.send({
-      from: "Portfolio <gowrishankar.dev>",
-      to: ["gowrishankar.devpro@gmail.com"],
-      subject: `💼 New Pricing Request - ${plan}`,
-      html: `
-        <h2>New Pricing Inquiry</h2>
-        <p><b>Plan:</b> ${plan}</p>
-        <p><b>Billing:</b> ${billing}</p>
-        <p><b>Price:</b> ₹${price}</p>
-        <br>
-        <p>Visitor clicked pricing card from portfolio.</p>
-      `
-    });
+//     // Send email to developer
+//     await resend.emails.send({
+//      from: "Portfolio <onboarding@resend.dev>",
+//       to: ["gowrishankar.devpro@gmail.com"],
+//       subject: `💼 New Pricing Request - ${plan}`,
+//       html: `
+//         <h2>New Pricing Inquiry</h2>
+//         <p><b>Plan:</b> ${plan}</p>
+//         <p><b>Billing:</b> ${billing}</p>
+//         <p><b>Price:</b> ₹${price}</p>
+//         <br>
+//         <p>Visitor clicked pricing card from portfolio.</p>
+//       `
+//     });
 
-    res.json({ success: true });
+//     res.json({ success: true });
 
-  } catch (err) {
-    console.error("PRICING ERROR:", err);
-    res.status(500).json({ success: false });
-  }
-});
+//   } catch (err) {
+//     console.error("PRICING ERROR:", err);
+//     res.status(500).json({ success: false });
+//   }
+// });
 
 // ============================
 // PORT
